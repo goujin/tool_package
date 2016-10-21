@@ -1,7 +1,7 @@
 '''Librairy that gives info on object and also that can do operations that are not yet supported in vanilla maya for nHairShape operations'''
 import pymel.core as pymel
 import sys
-sys.path.append('/home/jgoulet/maya/2016/scripts/maya_utils_lib/maya_utils_lib.py')
+sys.path.append('/home/jgoulet/maya/2016/scripts/maya_utils_lib/attribute_utils.py')
 import maya_utils_lib as maya_utils
 
 

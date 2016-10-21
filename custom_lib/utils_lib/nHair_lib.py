@@ -2,7 +2,7 @@
 import pymel.core as pymel
 import sys
 sys.path.append('/home/jgoulet/maya/2016/scripts/custom_lib/utils_lib/')
-import maya_utils_lib as maya_utils
+import attribute_utils as maya_utils
 
 
 def getNucleus_from_nHairShape(nHairShape):
