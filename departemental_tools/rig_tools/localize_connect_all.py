@@ -182,3 +182,16 @@ def do_it(selection=pm.selected()):
                     # This spot checks if the attribute is connectable to transfer the connection
                     # from the driver node to the driven node
                     is_not_connected_operation(object_list_attributes[x], attribute)
+
+
+def do_matrix_offseter(mesh_transform_list):
+    if not len(mesh_transform_list)>1:
+        mesh_transform=mesh_transform_list
+    mesh = mesh_transform.getShape()
+    skinCluster = mesh.inMesh.connections(plugs=True)
+    transform_geo = pm.createNode("transformGeometry")
+    loc = pm.createNode("locator").getParent()
+
+    loc.xformMatrix.connect(transform_geo.transform)
+    skinCluster.connect(transform_geo.inputGeometry)
+    transform_geo.outputGeometry.connect(mesh.inMesh)
