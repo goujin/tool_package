@@ -14,6 +14,8 @@ def bake( target,source=None, transfer_bake=True,
 
     if transfer_bake:
         pm.autoKeyframe(state=True, characterOption=True)
+        pm.currentTime(startFrame)
+        pm.setKeyframe(target)
         for x in range(startFrame, endFrame):
             pm.currentTime(x, update=True)
             value = source.getMatrix()
