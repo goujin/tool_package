@@ -41,7 +41,7 @@ def zeroOut(*args):
                 m1 = ev.getMatrix(worldSpace=True)
                 group = pm.group(empty=True, n=ev.name() + "_Grp")
                 group.setMatrix(m1)
-                pm.parent(group, ev.getParent())
+                if ev.getParent(): pm.parent(group, ev.getParent())
                 pm.parent(ev, group)
                 new_grps.append(group)
     return new_grps
@@ -288,6 +288,7 @@ def insert_joints_inBetween(object1, object2, name="default", nbJoints=3, make_h
         new_position = start_vector + chunk_vector * (x + 1)
         new_joint = pm.joint(n=joint_name, p=new_position)
 
+
 def controller_matcher(selection=pm.selected(), mirror_prefix=["L_", "R_"]):
     """it will try to find it's match on the other side of the rig
     Select controls curves (ex. 'leg_front_l_ik_ctrl'), and set the mirror prefix ('_l_', '_r_')"""
@@ -396,7 +397,7 @@ def controller_matcher(selection=pm.selected(), mirror_prefix=["L_", "R_"]):
             pm.delete(tmp, neg)
 
 
-def controller_matcher_on_selection(selection=pm.selected(),flip=False):
+def controller_matcher_on_selection(selection=pm.selected(), flip=False):
     """it will replace the shape of selected2 with the shapes of selected1"""
 
     def get_previous_controller_info(previous_controler):
@@ -440,7 +441,7 @@ def controller_matcher_on_selection(selection=pm.selected(),flip=False):
     target = selection[1]
 
     pm.parent(tmp, target)
-    pm.makeIdentity(tmp, t=True)#this brings everything puts translate and rotate values at 0 before scale freezing
+    pm.makeIdentity(tmp, t=True)  # this brings everything puts translate and rotate values at 0 before scale freezing
     pm.makeIdentity(tmp, apply=True, t=True, r=True, s=True)
     pm.parent(tmp, w=1)
     shapesDel = target.getShapes()

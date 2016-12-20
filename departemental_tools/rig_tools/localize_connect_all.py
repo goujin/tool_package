@@ -185,13 +185,18 @@ def do_it(selection=pm.selected()):
 
 
 def do_matrix_offseter(mesh_transform_list):
-    if not len(mesh_transform_list)>1:
-        mesh_transform=mesh_transform_list
-    mesh = mesh_transform.getShape()
-    skinCluster = mesh.inMesh.connections(plugs=True)
-    transform_geo = pm.createNode("transformGeometry")
-    loc = pm.createNode("locator").getParent()
+    def core_code(mesh_transform):
+        mesh = mesh_transform.getShape()
+        skinCluster = mesh.inMesh.connections(plugs=True)[0]
+        transform_geo = pm.createNode("transformGeometry")
+        loc = pm.createNode("locator").getParent()
 
-    loc.xformMatrix.connect(transform_geo.transform)
-    skinCluster.connect(transform_geo.inputGeometry)
-    transform_geo.outputGeometry.connect(mesh.inMesh)
+        loc.xformMatrix.connect(transform_geo.transform)
+        skinCluster.connect(transform_geo.inputGeometry)
+        transform_geo.outputGeometry.connect(mesh.inMesh, f=True)
+
+    if isinstance(mesh_transform_list, pm.nodetypes.Transform):
+        core_code(mesh_transform_list)
+    elif not len(mesh_transform_list) == 0:
+        for mesh_transform in mesh_transform_list:
+            core_code(mesh_transform)

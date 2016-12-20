@@ -1,6 +1,9 @@
 import pymel.core as pm
+import pymel.core as pymel
 #this class is made for test purpose only
-class Dynamics_nHair(object): 
+
+"""
+class Dynamics_nHair(object):
     if not len(pymel.ls(type='hairSystem')) == 1:
         pymel.error('One nHair at the time!')
     def __init__(self):
@@ -47,6 +50,6 @@ test.__doc__
 class Dynamic_nHair_manager(object):
     nHair
     
-    
+"""
     
 
