@@ -6,7 +6,11 @@ def bake( target=None,source=None, transfer_bake=True,
           worldSpace=False,source_list=[],target_list=[],
           multiBake=True):
     """by default will bake from a source to a target. It takes the matrice of one and set's it to the target.
-    It is not supporting for now ANY other behavior. """
+    It is not supporting for now ANY other behavior.
+    (target=None,source=None, transfer_bake=True,
+         startFrame=None, endFrame=None,
+          worldSpace=False,source_list=[],target_list=[],
+          multiBake=True)"""
     # Todo make it so, it support baking on itself and support transfer bake with custom attr
     if not startFrame: startFrame = pm.playbackOptions(q=True, minTime=True)
     if not endFrame: endFrame = pm.playbackOptions(q=True, maxTime=True)
