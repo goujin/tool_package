@@ -28,12 +28,26 @@ def localize_matrice_value(world_source,
     if previous_influence is None:
         raise Exception("the ik spring behavior is not ready. previous influence is needed!")
     else:
+
+        attr_world_bindpose = libRigging.create_utility_node(
+            'multMatrix',
+            matrixIn=(
+                holdMatrix.outMatrix,
+                previous_influence.worldMatrix
+            )
+        ).matrixSum
+
+        attr_world_bindpose_inv = libRigging.create_utility_node(
+            'inverseMatrix',
+            inputMatrix=attr_world_bindpose
+        ).outputMatrix
+
         attr_local_tm = libRigging.create_utility_node(
             'multMatrix',
-            matrixIn=(holdMatrix.outMatrix,  # this must be holding the local matrix
-                      previous_influence.worldMatrix,
-                      world_source.worldInverseMatrix
-                      )
+            matrixIn=(
+                world_source.worldMatrix,
+                attr_world_bindpose_inv
+            )
         ).matrixSum
 
         decompose_m = libRigging.create_utility_node(
@@ -178,12 +192,6 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, setup_
         pointInfo.position.connect(sim_loc.translate)
         sim_locator_list.append(sim_loc)  # stocking only locator transform for efficiency gain
 
-        # stocking bind pose zero grp in locator
-        bp = pm.createNode("transform", name="{}_{}_BindPose".format(setup_name, str(x).zfill(2)))
-        temp_m = current_ctrl.getMatrix(worldSpace=True)
-        bp.setMatrix(temp_m)
-        bp.setParent(sim_loc)
-
     # second part is to set up the dummy locators and the orient on the sim locators
 
     holdMatrix_list = []
@@ -237,10 +245,10 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, setup_
             ctrl_master.dynamicEnvelope.connect(input2_plug2)
 
         decompose_node.outputTranslate.connect(get_dynamic_parent(current_ctrl).translate)
-        reverse = pm.createNode("reverse")
-        decompose_node.outputRotate.connect(reverse.input)
-        reverse.output.connect(get_dynamic_parent(current_ctrl).rotate)
-        # decompose_node.outputRotate.connect(get_dynamic_parent(current_ctrl).rotate) #TODO I should not have to go through a reverse node
+        # reverse = pm.createNode("reverse") #TODO I should not have to go through a reverse node
+        # decompose_node.outputRotate.connect(reverse.input)
+        # reverse.output.connect(get_dynamic_parent(current_ctrl).rotate)
+        decompose_node.outputRotate.connect(get_dynamic_parent(current_ctrl).rotate)
 
     sim_loc_grp = pm.createNode("transform", name="SimLoc_{}_Grp".format(setup_name))
     pm.parent(sim_locator_list, sim_loc_grp)
