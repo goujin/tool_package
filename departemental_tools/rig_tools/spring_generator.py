@@ -156,13 +156,22 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
     pm.rename(nHair.getParent(), "{}_nHair".format(setup_name))
     follicle.outHair.connect(nHair.inputHair[0])  # It should in fact always only have on curve per hairSystem.
     nHair.outputHair[0].connect(follicle.currentPosition)
-    condition_node = create_utility_node("condition",
+    nHair_condition_node = create_utility_node("condition",
                                          secondTerm=1,
                                          firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
 
-    condition_node.colorIfFalseR.set(1)
-    condition_node.colorIfTrueR.set(3)
-    condition_node.outColorR.connect(nHair.simulationMethod)  # cannot connect via utility node.
+    nHair_condition_node.colorIfFalseR.set(1)
+    nHair_condition_node.colorIfTrueR.set(3)
+    nHair_condition_node.outColorR.connect(nHair.simulationMethod)  # cannot connect via utility node.
+
+    follicle_condition_node = create_utility_node("condition",
+                                         secondTerm=1,
+                                         firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
+
+    follicle_condition_node.colorIfFalseR.set(0)
+    follicle_condition_node.colorIfTrueR.set(2)
+    follicle_condition_node.outColorR.connect(follicle.simulationMethod)  # cannot connect via utility node.
+
 
     return dynamic_curve  # this curve should be a functionnal dynamic curve
 
@@ -244,11 +253,11 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, setup_
             ctrl_master.dynamicEnvelope.connect(input2_plug1)
             ctrl_master.dynamicEnvelope.connect(input2_plug2)
 
-        decompose_node.outputTranslate.connect(get_dynamic_parent(current_ctrl).translate)
-        # reverse = pm.createNode("reverse") #TODO I should not have to go through a reverse node
-        # decompose_node.outputRotate.connect(reverse.input)
-        # reverse.output.connect(get_dynamic_parent(current_ctrl).rotate)
-        decompose_node.outputRotate.connect(get_dynamic_parent(current_ctrl).rotate)
+        decompose_node.outputTranslate.connect(multiply_scaling_t.input1)
+        multiply_scaling_t.output.connect(get_dynamic_parent(current_ctrl).translate)
+
+        decompose_node.outputRotate.connect(multiply_scaling_r.input1)
+        multiply_scaling_r.output.connect(get_dynamic_parent(current_ctrl).rotate)
 
     sim_loc_grp = pm.createNode("transform", name="SimLoc_{}_Grp".format(setup_name))
     pm.parent(sim_locator_list, sim_loc_grp)
