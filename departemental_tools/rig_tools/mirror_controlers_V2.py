@@ -94,15 +94,15 @@ def controller_matcher(selection=pymel.selected(), mirror_prefix=["L_", "R_"], f
         transfer_shape(selection=selection, flip=flip)
 
     else:
-        _possible_sides = list(mirror_prefix)
-        for selected_object in selection:
 
+        for selected_object in selection:
+            _possible_sides = list(mirror_prefix)
             skip_mechanism = False  # This is in place to protect from possible controller having no mirror prefix at all
 
-            if _possible_sides[0] in selected_object.name():
+            if mirror_prefix[0] in selected_object.name():
                 current_side = _possible_sides.pop(0)
 
-            elif _possible_sides[1] in selected_object.name():
+            elif mirror_prefix[1] in selected_object.name():
                 current_side = _possible_sides.pop(1)
 
             else:
