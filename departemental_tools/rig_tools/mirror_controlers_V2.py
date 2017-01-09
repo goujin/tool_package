@@ -1,21 +1,21 @@
-import pymel.core as pm
+import pymel.core as pymel
 from omtk.libs import libRigging
 
 
 def get_orig_shape(shape):
     return next((hist for hist in shape.listHistory()
-                 if isinstance(hist, pm.nodetypes.NurbsCurve)
+                 if isinstance(hist, pymel.nodetypes.NurbsCurve)
                  and hist != shape
                  and hist.intermediateObject.get()), None)
 
 
 def safety_check(check_object=None, check_curve_list=None):
     if check_object:
-        if not isinstance(check_object, pm.nodetypes.Transform):
+        if not isinstance(check_object, pymel.nodetypes.Transform):
             return False
     elif check_curve_list:
         for each in check_curve_list:
-            if not isinstance(each, pm.nodetypes.NurbsCurve):
+            if not isinstance(each, pymel.nodetypes.NurbsCurve):
                 return False
 
 
@@ -51,7 +51,7 @@ def adapt_to_orig_shape(source, target):
 
     def get_transformGeometry(shape):
         return next((hist for hist in shape.listHistory()
-                     if isinstance(hist, pm.nodetypes.TransformGeometry)), None)
+                     if isinstance(hist, pymel.nodetypes.TransformGeometry)), None)
 
     # Resolve orig shape
     shape_orig = get_orig_shape(target)
@@ -75,22 +75,22 @@ def adapt_to_orig_shape(source, target):
     )
 
     # source.getParent().setParent(grp_offset) JG modification source should already be in place
-    pm.connectAttr(tmp_transform_geometry.outputGeometry, shape_orig.create)
+    pymel.connectAttr(tmp_transform_geometry.outputGeometry, shape_orig.create)
 
     # Cleanup
-    pm.refresh(force=True)  # TODO fix this issue where it more or less transfert the ctrl
-    pm.disconnectAttr(shape_orig.create)
-    pm.delete(tmp_transform_geometry, source.getParent())
+    pymel.refresh(force=True)  # but why do I have to refresh^!
+    pymel.disconnectAttr(shape_orig.create)
+    pymel.delete(tmp_transform_geometry, source.getParent())
 
 
-def controller_matcher(selection=pm.selected(), mirror_prefix=["L_", "R_"], flip=True):
+def controller_matcher(selection=pymel.selected(), mirror_prefix=["L_", "R_"], flip=True):
     """it will try to find it's match on the other side of the rig
     Select controls curves (ex. 'leg_front_l_ik_ctrl'), and set the mirror prefix ('_l_', '_r_')"""
     if not mirror_prefix:
-        if len(selection)!=2:
-            msg="""The only supported behavior when no mirror_prefix is given, is to have only two controlers selected.
+        if len(selection) != 2:
+            msg = """The only supported behavior when no mirror_prefix is given, is to have only two controlers selected.
             It will match the first controller to the second one."""
-            pm.error(msg)
+            pymel.error(msg)
         transfer_shape(selection=selection, flip=flip)
 
     else:
@@ -112,38 +112,38 @@ def controller_matcher(selection=pm.selected(), mirror_prefix=["L_", "R_"], flip
                 pass
             else:
                 target_name = selected_object.name().replace(current_side, _possible_sides[0])
-                if pm.objExists(target_name):
-                    target = pm.PyNode(selected_object.name().replace(current_side, _possible_sides[0]))
+                if pymel.objExists(target_name):
+                    target = pymel.PyNode(selected_object.name().replace(current_side, _possible_sides[0]))
                     controllers = selected_object, target
                     transfer_shape(controllers, flip=True)
 
 
-def transfer_shape(selection=pm.selected(), flip=True):
+def transfer_shape(selection=pymel.selected(), flip=True):
     """it will replace the shape of selected2 with the shapes of selected1"""
 
     source = selection[0]
 
-    dup = pm.duplicate(source, rc=1)[0]
-    tmp = pm.createNode('transform')
-    pm.parent(tmp, dup)
-    pm.xform(tmp, t=(0, 0, 0), ro=(0, 0, 0), scale=(1, 1, 1))
-    pm.parent(tmp, w=1)
+    dup = pymel.duplicate(source, rc=1)[0]
+    tmp = pymel.createNode('transform')
+    pymel.parent(tmp, dup)
+    pymel.xform(tmp, t=(0, 0, 0), ro=(0, 0, 0), scale=(1, 1, 1))
+    pymel.parent(tmp, w=1)
     for sh in dup.getShapes(noIntermediate=True):
-        pm.parent(sh, tmp, r=1, s=1)
+        pymel.parent(sh, tmp, r=1, s=1)
 
-    pm.delete(dup)
-    temp_grp_negScale = pm.createNode('transform')
-    pm.parent(tmp, temp_grp_negScale)
+    pymel.delete(dup)
+    temp_grp_negScale = pymel.createNode('transform')
+    pymel.parent(tmp, temp_grp_negScale)
     if flip:
         temp_grp_negScale.scaleX.set(-1)
     target = selection[1]
 
-    pm.parent(tmp, target)
-    pm.delete(temp_grp_negScale)
+    pymel.parent(tmp, target)
+    pymel.delete(temp_grp_negScale)
 
-    pm.makeIdentity(tmp, t=True)  # this brings translate values at 0 before scale freezing
-    pm.makeIdentity(tmp, apply=True, t=True, r=True, s=True)
-    pm.parent(tmp, w=1)
+    pymel.makeIdentity(tmp, t=True)  # this brings translate values at 0 before scale freezing
+    pymel.makeIdentity(tmp, apply=True, t=True, r=True, s=True)
+    pymel.parent(tmp, w=1)
 
     color_info, vis_master = get_previous_controller_info(target)
 
@@ -153,10 +153,10 @@ def transfer_shape(selection=pm.selected(), flip=True):
 
         else:
             shapesDel = target.getShapes()
-            if shapesDel: pm.delete(shapesDel)
+            if shapesDel: pymel.delete(shapesDel)
 
-            pm.parent(sh, target, r=1, s=1)
-            pm.rename(sh.name(), target.name() + "Shape")
+            pymel.parent(sh, target, r=1, s=1)
+            pymel.rename(sh.name(), target.name() + "Shape")
 
             if color_info[0]:
                 if color_info[1]:
