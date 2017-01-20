@@ -5,12 +5,13 @@ from omtk.libs import libRigging
 from omtk.libs.libRigging import create_utility_node
 
 
-# todo// if only this could be cleaned to have a particle spring build, a fk/ik chain build via nHair,
-# todo// Ik attach to ctrl and fk attach to control separately(or together I still don't know what would be better)
-
-# todo// must support the build with an assigned nHair with or without an assigned nucleus ----wip/DONE
-# todo// must support a certain "unbuild method". User must be able to assign curves to new nHair
-# todo// must make connection with nucleus.startFrame instead of nHair.startFrame
+# todo// if only this could be cleaned to have a particle spring build
+# todo// renaming gets real shitty if there is some short name that are the same. adapt to short name support.
+# todo// a fk/ik chain build via nHair------------------------------------------------------------------------------DONE
+# todo// Ik attach to ctrl and fk attach to control separately(or together I still don't know what would be better)-DONE
+# todo// must support the build with an assigned nHair with or without an assigned nucleus--------------------------DONE
+# todo// must make connection with nucleus.startFrame instead of nHair.startFrame --------------------------------- DONE
+# todo// must support a certain "unbuild method". ------------------------------------------------------------------DONE
 # Notice// can't have multiple master switch if only one nucleus. It then needs more nucleus.
 
 def get_zero_grp(target):
@@ -26,6 +27,10 @@ def get_animation_layer(target):
 
 
 def check_free_index(attribute):
+    """
+    :param attribute:
+    :return:
+    """
     connections_list = attribute.connections(connections=True, plugs=True)
     if connections_list == []:
         return 0
@@ -37,14 +42,15 @@ def check_free_index(attribute):
                 return x
 
 
-def localize_matrice_value(world_source,
-                           holdMatrix,
-                           previous_influence=None):  # world_source must be a locator in chain before feeding it to local target.
-
-    # world source is the sim locator
-    # bind_pose is is the kept parent of the ctrl data, child to the sim locator
-    # third is the loc2 sim
-    #
+def localize_Backup_matrice_value(world_source,
+                                  holdMatrix,
+                                  previous_influence=None):
+    """
+    :param world_source: world source is the sim locator. World_source must be a locator in chain before feeding it to local target.
+    :param holdMatrix: bind_pose is is the kept parent of the ctrl data, child to the sim locator
+    :param previous_influence: previous sim locator in chain .
+    :return: decomposeMatrix node
+    """
     if previous_influence is None:
         raise Exception("the ik spring behavior is not ready. previous influence is needed!")
     else:
@@ -54,6 +60,63 @@ def localize_matrice_value(world_source,
             matrixIn=(
                 holdMatrix.outMatrix,
                 previous_influence.worldMatrix
+            )
+        ).matrixSum
+
+        attr_world_bindpose_inv = libRigging.create_utility_node(
+            'inverseMatrix',
+            inputMatrix=attr_world_bindpose
+        ).outputMatrix
+
+        attr_local_tm = libRigging.create_utility_node(
+            'multMatrix',
+            matrixIn=(
+                world_source.worldMatrix,
+                attr_world_bindpose_inv
+            )
+        ).matrixSum
+
+        decompose_m = libRigging.create_utility_node(
+            'decomposeMatrix',
+            inputMatrix=attr_local_tm
+        )
+
+    return decompose_m
+
+
+def localize_matrice_value(world_source,
+                           holdMatrix,
+                           local_var=None, localize_type=None):
+    """
+    :param world_source: world source is the sim locator. World_source must be a locator in chain before feeding it to local target.
+    :param holdMatrix: bind_pose is is the kept parent of the ctrl data, child to the sim locator
+    :param local_var: for "FK" previous sim locator in chain . for "IK" the master grp of the input curve rotation.
+    :param localize_type: supported types = "FK","IK"
+    :return: decomposeMatrix node
+    """
+
+    if localize_type is "IK":
+        attr_world = libRigging.create_utility_node(
+            'multMatrix',
+            matrixIn=(
+                world_source.worldMatrix,
+                local_var.worldInverseMatrix,
+                holdMatrix.outMatrix
+            )).matrixSum
+
+        decompose_m = libRigging.create_utility_node(
+            'decomposeMatrix',
+            inputMatrix=attr_world
+        )
+        return decompose_m
+
+    elif localize_type is "FK":
+
+        attr_world_bindpose = libRigging.create_utility_node(
+            'multMatrix',
+            matrixIn=(
+                holdMatrix.outMatrix,
+                local_var.worldMatrix
             )
         ).matrixSum
 
@@ -98,16 +161,9 @@ def prepare_ctrl(ctrl, master=False, needs_parent=False, delegate=False):
                        min=0, max=1.5)
 
     if needs_parent:
-        zeroOut(ctrl, suffix="_DynamicParent")
-        zeroOut(ctrl, suffix="_DynamicAnimation")
-
-
-def get_bind_pose(target):  # todo check if this is still in use somewhere
-    children = target.getChildren()
-    for ev in children:
-        if "BindPose" in ev.name():
-            return ev
-    return None
+        if not "_DynamicAnimation" in ctrl.getParent().name():
+            zeroOut(ctrl, suffix="_DynamicParent")
+            zeroOut(ctrl, suffix="_DynamicAnimation")
 
 
 def zeroOut(transform, suffix="_ZERO"):
@@ -169,9 +225,11 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
                                    startPosition=curve.local,
                                    startPositionMatrix=curve.getParent().worldMatrix[0])
 
-    pm.rename(follicle.getParent(), "{}_follicle".format(setup_name))
-    pm.parent(curve.getParent(), follicle.getParent())
-    follicle.getParent().setParent(rig_high_point)
+    follicle_p = follicle.getParent()
+    pm.rename(follicle_p, "{}_follicle".format(setup_name))
+    follicle_p.setParent(rig_high_point)
+    pm.makeIdentity(follicle_p, t=True, r=True, s=True)
+    pm.parent(curve.getParent(), follicle_p)
 
     dynamic_curve = create_utility_node("nurbsCurve",
                                         create=follicle.outCurve)
@@ -226,7 +284,7 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
 
 def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, delegate_envelope, setup_name="spring",
                               FK=True, aim=[0, 1, 0],
-                              upVector=[1, 0, 0], rig_high_point=None):
+                              upVector=[1, 0, 0], rig_high_point=None, local_type="FK"):
     """Third part of the spring setup. This will create locator on curve points, linked them to the curve position data
     and aim each of them to the previous. It also makes a small matrix multiplication setup to localize the world data to
      the local fk chain of ctrl or to the rig itself. It creates a setup of switch to shut down the data collected or to
@@ -256,7 +314,10 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, delega
     for x, (sim_loc, current_ctrl) in enumerate(zip(sim_locator_list, ctrl_list)):
         # try and match controller parent, it is a kind of bind pose and not a true matching setup
         ctrl_parent = get_zero_grp(current_ctrl)
-        grp_m = ctrl_parent.matrix.get()
+        if local_type is "FK":
+            grp_m = ctrl_parent.matrix.get()
+        if local_type is "IK":
+            grp_m = ctrl_parent.inverseMatrix.get()
 
         holdMatrix = pm.createNode("holdMatrix", name="Dummy_{}_holdMatrix".format(ctrl_parent.name()))
         holdMatrix.inMatrix.set(
@@ -285,10 +346,23 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, delega
 
         # part three. I try to plug everything together.formula example for matrices multiplication: dummy_bind_loc2(local) * sim_loc1 *-loc2_sim
         # I do a small feet of matrices multiplication here to localize the result for the fk chain
-        if not x == 0:
-            decompose_node = localize_matrice_value(sim_loc, holdMatrix, previous_influence=sim_locator_list[x - 1])
-        else:
-            decompose_node = localize_matrice_value(sim_loc, holdMatrix, previous_influence=rig_high_point)
+        if local_type == "IK":
+            if not x == 0:
+                decompose_node = localize_matrice_value(sim_loc, holdMatrix, local_var=rig_high_point,
+                                                        localize_type=local_type)
+            else:
+                decompose_node = localize_matrice_value(sim_loc, holdMatrix, local_var=rig_high_point,
+                                                        localize_type=local_type)
+
+        if local_type == "FK":
+            if not x == 0:
+                decompose_node = localize_matrice_value(sim_loc, holdMatrix,
+                                                        local_var=sim_locator_list[x - 1],
+                                                        localize_type=local_type)
+            else:
+                decompose_node = localize_matrice_value(sim_loc, holdMatrix,
+                                                        local_var=rig_high_point,
+                                                        localize_type=local_type)
 
         multiply_scaling_t = pm.createNode("multiplyDivide",
                                            name="mult_{mult_name}{padding}_trans_scale".format(mult_name=setup_name,
@@ -313,9 +387,33 @@ def make_aim_connection_setup(dynamic_nurbsCurve, ctrl_list, ctrl_master, delega
     pm.delete(temp_nearestPointC)
 
 
+def check_rig_regen(ctrl):
+    """
+    :param ctrl: Must give a ctrl to check if prepare ctrl has already been run on the object
+    :return: True or False
+    """
+    try:
+        return "_DynamicAnimation" in ctrl.getParent().name()
+    except:
+        return False
+
+
 def do_it(aim_direction=[0, 1, 0], upVector_direction=[1, 0, 0],
           master_ctrl=None, delegate_envelope=None,
-          nucleus=None, hairSystem=None):
+          nucleus=None, hairSystem=None, local_type="FK"):
+    """
+    first function to run for the spring generation. It takes charge of pushing forward the proper variables
+    to each function.
+    :param aim_direction: aim vector of the locators
+    :param upVector_direction: up vector for the locators
+    :param master_ctrl: The controller which will receive most of the important switch. This one can be re used for a
+    lot of springs.
+    :param delegate_envelope: where will the dynamic envelope be located (on the spring usually either the tip or base)
+    :param nucleus: a nucleus per master_ctrl at least. The nucleus will serve a the environement for the nHair
+    :param hairSystem: the hair system is the dynamic core of the spring
+    :param local_type: whether it is "FK" or "IK". If more type gets supported add them to this doc string.
+    :return:
+    """
     selection = pm.selected()
     setup_name = selection[0].name().replace("_Ctrl", "")
 
@@ -325,7 +423,12 @@ def do_it(aim_direction=[0, 1, 0], upVector_direction=[1, 0, 0],
     if delegate_envelope == None:
         delegate_envelope = master_ctrl
 
-    rig_high_point = selection[0].getParent()
+    if check_rig_regen(selection[0]):
+        # when True, it will fetch the zero of the first element because we want the follicle at the right place
+        rig_high_point = get_zero_grp(selection[0])
+    else:
+        #most common situation. On the first run rig_high_point should be first object parent
+        rig_high_point = selection[0].getParent()
 
     curve = create_curve(selection, master_ctrl, delegate_envelope,
                          setup_name=setup_name)
@@ -342,4 +445,5 @@ def do_it(aim_direction=[0, 1, 0], upVector_direction=[1, 0, 0],
                               setup_name=setup_name,
                               aim=aim_direction,
                               upVector=upVector_direction,
-                              rig_high_point=rig_high_point)
+                              rig_high_point=rig_high_point,
+                              local_type=local_type)

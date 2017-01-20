@@ -120,7 +120,7 @@ def controller_matcher(selection=pymel.selected(), mirror_prefix=["L_", "R_"], f
 
 def transfer_shape(selection=pymel.selected(), flip=True):
     """it will replace the shape of selected2 with the shapes of selected1"""
-
+    #todo check for alternaltive that bette preserve the shapes. See prism cubes shapes.
     source = selection[0]
 
     dup = pymel.duplicate(source, rc=1)[0]
@@ -174,3 +174,5 @@ def transfer_shape(selection=pymel.selected(), flip=True):
 
             if vis_master:
                 vis_master.connect(sh.visibility)
+
+    pymel.delete(tmp)
