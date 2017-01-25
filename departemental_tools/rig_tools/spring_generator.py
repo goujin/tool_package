@@ -204,6 +204,17 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
     """creates the default setup for maya dynamics. It affects as little as it can the nucleus because it is re used for all springs
     instead it clamps the value directly in the hairSystem node. It also make the connection to shut the dynamic without
     completly shutting down the follicle. static vs off in the hairSystem node"""
+
+    def follicle_conditon_act(follicle, ctrl_master):
+        follicle_condition_node = create_utility_node("condition",
+                                                      n="follicle_condition",
+                                                      secondTerm=1,
+                                                      firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
+
+        follicle_condition_node.colorIfFalseR.set(0)
+        follicle_condition_node.colorIfTrueR.set(2)
+        follicle_condition_node.outColorR.connect(follicle.simulationMethod)  # cannot connect via utility node.
+
     time = pm.PyNode("time1")
     if nucleus == None:
         nucleus = create_utility_node("nucleus",
@@ -256,6 +267,7 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
 
         # the switch conditions to turn off the whole system down.
         nHair_condition_node = create_utility_node("condition",
+                                                   n="nHair_condition",
                                                    secondTerm=1,
                                                    firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
 
@@ -263,13 +275,8 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
         nHair_condition_node.colorIfTrueR.set(3)
         nHair_condition_node.outColorR.connect(hairSystem.simulationMethod)  # cannot connect via utility node.
 
-        follicle_condition_node = create_utility_node("condition",
-                                                      secondTerm=1,
-                                                      firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
+        follicle_conditon_act(follicle, ctrl_master)
 
-        follicle_condition_node.colorIfFalseR.set(0)
-        follicle_condition_node.colorIfTrueR.set(2)
-        follicle_condition_node.outColorR.connect(follicle.simulationMethod)  # cannot connect via utility node.
 
     else:
         if not isinstance(hairSystem, pm.nodetypes.HairSystem):
@@ -278,6 +285,7 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
         x = check_free_index(hairSystem.inputHair)
         follicle.outHair.connect(hairSystem.inputHair[x])
         hairSystem.outputHair[x].connect(follicle.currentPosition)
+        follicle_conditon_act(follicle, ctrl_master)
 
     return dynamic_curve  # this curve should be a functionnal dynamic curve
 
@@ -427,7 +435,7 @@ def do_it(aim_direction=[0, 1, 0], upVector_direction=[1, 0, 0],
         # when True, it will fetch the zero of the first element because we want the follicle at the right place
         rig_high_point = get_zero_grp(selection[0])
     else:
-        #most common situation. On the first run rig_high_point should be first object parent
+        # most common situation. On the first run rig_high_point should be first object parent
         rig_high_point = selection[0].getParent()
 
     curve = create_curve(selection, master_ctrl, delegate_envelope,

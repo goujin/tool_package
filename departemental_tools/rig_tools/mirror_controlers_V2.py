@@ -80,7 +80,7 @@ def adapt_to_orig_shape(source, target):
     # Cleanup
     pymel.refresh(force=True)  # but why do I have to refresh^!
     pymel.disconnectAttr(shape_orig.create)
-    pymel.delete(tmp_transform_geometry, source.getParent())
+    pymel.delete(tmp_transform_geometry)
 
 
 def controller_matcher(selection=pymel.selected(), mirror_prefix=["L_", "R_"], flip=True):

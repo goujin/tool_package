@@ -1,6 +1,9 @@
-"""source= dynamic curve. Because every ctrl is being driven from this source
- ctrl= the animators ctrl, the one they will animate
- dynamic_layer= the layer where the animators will bake their dynamic data too."""
+# General info header.
+# source= dynamic layer, target= Animation bake layer. animation bake layer is child of dynamic layer.
+# While baking double transform will occur.
+# ctrl= the animators ctrl, the one they will animate
+#General idea. From the selected controller you go fetch the nucleus. And from the nucleus you go fetch the controller's
+#parents. This will give you all the concerned spring controller to bake in one go.
 import pymel.core as pymel
 
 
