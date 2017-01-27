@@ -1,9 +1,23 @@
 import pymel.core as pm
-import pymel.core as pm
-import maya.mel as mel
-from omtk.libs import libRigging
 from omtk.libs.libRigging import create_utility_node
+"""
+import pymel.core as pm
+import spring_generator as spring
 
+#define your values here
+master_ctrl=pm.PyNode("Jan_Spring_Master_Ctrl") #where are you sending the exposed animatable sim parameters
+delegated=pm.selected()[-2] #where are so sending the dynamic envelope switch
+
+nucleus=pm.PyNode("Jan_Spring_Master_spring_nucleus") # or None
+hairSystem=pm.PyNode("Jan_Leafs_Jan_Leafs_13_00_nHairShape") # or None
+
+
+spring.do_it( aim_direction=[1, 0, 0],upVector_direction=[0, 0, 1],
+             master_ctrl=master_ctrl,nucleus=nucleus,
+             hairSystem=hairSystem,delegate_envelope=delegated,
+             local_type="FK")
+
+ """
 
 # todo// if only this could be cleaned to have a particle spring build
 # todo// renaming gets real shitty if there is some short name that are the same. adapt to short name support.
@@ -55,7 +69,7 @@ def localize_Backup_matrice_value(world_source,
         raise Exception("the ik spring behavior is not ready. previous influence is needed!")
     else:
 
-        attr_world_bindpose = libRigging.create_utility_node(
+        attr_world_bindpose = create_utility_node(
             'multMatrix',
             matrixIn=(
                 holdMatrix.outMatrix,
@@ -63,12 +77,12 @@ def localize_Backup_matrice_value(world_source,
             )
         ).matrixSum
 
-        attr_world_bindpose_inv = libRigging.create_utility_node(
+        attr_world_bindpose_inv = create_utility_node(
             'inverseMatrix',
             inputMatrix=attr_world_bindpose
         ).outputMatrix
 
-        attr_local_tm = libRigging.create_utility_node(
+        attr_local_tm = create_utility_node(
             'multMatrix',
             matrixIn=(
                 world_source.worldMatrix,
@@ -76,7 +90,7 @@ def localize_Backup_matrice_value(world_source,
             )
         ).matrixSum
 
-        decompose_m = libRigging.create_utility_node(
+        decompose_m = create_utility_node(
             'decomposeMatrix',
             inputMatrix=attr_local_tm
         )
@@ -96,7 +110,7 @@ def localize_matrice_value(world_source,
     """
 
     if localize_type is "IK":
-        attr_world = libRigging.create_utility_node(
+        attr_world = create_utility_node(
             'multMatrix',
             matrixIn=(
                 world_source.worldMatrix,
@@ -104,7 +118,7 @@ def localize_matrice_value(world_source,
                 holdMatrix.outMatrix
             )).matrixSum
 
-        decompose_m = libRigging.create_utility_node(
+        decompose_m = create_utility_node(
             'decomposeMatrix',
             inputMatrix=attr_world
         )
@@ -112,7 +126,7 @@ def localize_matrice_value(world_source,
 
     elif localize_type is "FK":
 
-        attr_world_bindpose = libRigging.create_utility_node(
+        attr_world_bindpose = create_utility_node(
             'multMatrix',
             matrixIn=(
                 holdMatrix.outMatrix,
@@ -120,12 +134,12 @@ def localize_matrice_value(world_source,
             )
         ).matrixSum
 
-        attr_world_bindpose_inv = libRigging.create_utility_node(
+        attr_world_bindpose_inv = create_utility_node(
             'inverseMatrix',
             inputMatrix=attr_world_bindpose
         ).outputMatrix
 
-        attr_local_tm = libRigging.create_utility_node(
+        attr_local_tm = create_utility_node(
             'multMatrix',
             matrixIn=(
                 world_source.worldMatrix,
@@ -133,7 +147,7 @@ def localize_matrice_value(world_source,
             )
         ).matrixSum
 
-        decompose_m = libRigging.create_utility_node(
+        decompose_m = create_utility_node(
             'decomposeMatrix',
             inputMatrix=attr_local_tm
         )
@@ -207,7 +221,7 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
 
     def follicle_conditon_act(follicle, ctrl_master):
         follicle_condition_node = create_utility_node("condition",
-                                                      n="follicle_condition",
+                                                      name="follicle_condition",
                                                       secondTerm=1,
                                                       firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
 
@@ -267,7 +281,7 @@ def make_dynamic_setup(curve, ctrl_master, setup_name="test", rig_high_point=Non
 
         # the switch conditions to turn off the whole system down.
         nHair_condition_node = create_utility_node("condition",
-                                                   n="nHair_condition",
+                                                   name="nHair_condition",
                                                    secondTerm=1,
                                                    firstTerm=ctrl_master.springActivation)  # firstTerm=ctrl_master.springActivation
 

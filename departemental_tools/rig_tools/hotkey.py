@@ -8,7 +8,7 @@ import maya_utils.selection_utils
 
 
 # position snaping
-def position snaping():
+def position_snaping():
 	selection=pm.selected()
 	if len(selection)==2:
 	    snap(selection[0],selection[1],ko=False)
