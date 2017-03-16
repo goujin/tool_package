@@ -42,29 +42,27 @@ def get_previous_controller_info(previous_controler):
     return (color_info, visibility_connection_info)
 
 
-def adapt_to_orig_shape(source, target):
+def adapt_to_orig_shape(source, shape_orig):
     """
     :param source: source shape to transfer
-    :param target: target to transfer to
+    :param shape_orig: target to transfer to
      This is based out of Renaud's code on shape to orig when building and unbuilding with omtk to preserve shape info.
     """
 
-    def get_transformGeometry(shape):
-        return next((hist for hist in shape.listHistory()
+    def get_transformGeometry(target):
+        return next((hist for hist in target.listHistory()
                      if isinstance(hist, pymel.nodetypes.TransformGeometry)), None)
 
-    # Resolve orig shape
-    shape_orig = get_orig_shape(target)
 
     # Resolve compensation matrix
-    util_transform_geometry = get_transformGeometry(target)
+    util_transform_geometry = get_transformGeometry(shape_orig)
     if not util_transform_geometry:
-        target.warning("Skipping {}. Cannot find transformGeometry.".format(target))
+        shape_orig.warning("Skipping {}. Cannot find transformGeometry.".format(shape_orig))
         return
     attr_compensation_tm = next(iter(util_transform_geometry.transform.inputs(plugs=True)), None)
 
     if not attr_compensation_tm:
-        target.warning("Skipping {}. Cannot find compensation matrix.".format(target))
+        shape_orig.warning("Skipping {}. Cannot find compensation matrix.".format(shape_orig))
         return
 
     tmp_transform_geometry = libRigging.create_utility_node(
@@ -75,10 +73,10 @@ def adapt_to_orig_shape(source, target):
     )
 
     # source.getParent().setParent(grp_offset) JG modification source should already be in place
-    pymel.connectAttr(tmp_transform_geometry.outputGeometry, shape_orig.create)
+    pymel.connectAttr(tmp_transform_geometry.outputGeometry, shape_orig.create,f=True)
 
     # Cleanup
-    pymel.refresh(force=True)  # but why do I have to refresh^!
+    pymel.refresh(force=True)  # but why do I have to refresh?!
     pymel.disconnectAttr(shape_orig.create)
     pymel.delete(tmp_transform_geometry)
 

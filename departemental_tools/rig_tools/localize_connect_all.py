@@ -118,9 +118,9 @@ def parentAttr_lock_mangement(attribute, decision):
         pass
 
 
-def do_it(selection=pm.selected()):
+def bruteforceLocalize(selection=None):
     """duplicate all and reconnect driven connections to driver and driver to empty connectable driven attributes"""
-
+    if selection==None: selection=pm.selected()
     duplicate_dict = duplicate(selection)
 
     for new_object in duplicate_dict:
@@ -185,18 +185,17 @@ def do_it(selection=pm.selected()):
 
 
 def do_matrix_offseter(mesh_transform_list):
-    def core_code(mesh_transform):
+    def create_offset(mesh_transform,locator=None):
         mesh = mesh_transform.getShape()
         skinCluster = mesh.inMesh.connections(plugs=True)[0]
         transform_geo = pm.createNode("transformGeometry")
-        loc = pm.createNode("locator").getParent()
 
-        loc.xformMatrix.connect(transform_geo.transform)
+        locator.worldMatrix[0].connect(transform_geo.transform)
         skinCluster.connect(transform_geo.inputGeometry)
         transform_geo.outputGeometry.connect(mesh.inMesh, f=True)
 
-    if isinstance(mesh_transform_list, pm.nodetypes.Transform):
-        core_code(mesh_transform_list)
-    elif not len(mesh_transform_list) == 0:
+    if isinstance(mesh_transform_list, list) and not len(mesh_transform_list) == 0:
+        locator = pm.createNode("locator").getParent()
         for mesh_transform in mesh_transform_list:
-            core_code(mesh_transform)
+            if isinstance(mesh_transform.getShape(),pm.nodetypes.Mesh):
+                create_offset(mesh_transform,locator=locator)
