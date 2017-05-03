@@ -41,7 +41,7 @@ nucleus=pm.PyNode("Jan_Spring_Master_spring_nucleus") # or None
 hairSystem=pm.PyNode("Jan_Leafs_Jan_Leafs_13_00_nHairShape") # or None
 
 
-spring.generate_springs( aim_direction=[1, 0, z0],upVector_direction=[0, 0, 1],
+spring.do_it( aim_direction=[1, 0, 0],upVector_direction=[0, 0, 1],
              master_ctrl=master_ctrl,nucleus=nucleus,
              hairSystem=hairSystem,delegate_envelope=delegated,
              local_type="FK")
