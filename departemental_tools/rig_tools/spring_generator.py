@@ -1,4 +1,35 @@
 """
+As of now the script only works on the the most simple Fk chains rig. The tool is still not ready for ik chains nor
+any ribbon specific rig. The setups needs dummy's to be at the end of chain to fake the last orient and the dummy must
+have a zero parent. The reasons is to have  more length to the created curve so it can be more impactfull + the tip
+controller won't be able to aim if not. So basically once the dummy and the zero is created, you will select the from
+the root to the tip all the controller you want in the Fk chain to be affected by the spring sim + the dummy. When the
+script will be run it will create an input curve where each of it's points represents the position of the selected
+controllers.
+The input curve has to be hidden with the parent follicle. All the components from the generated spring can be place in
+the standard name grp for springs:
+Spring_Setup_Grp
+    Nucleus_Grp
+    HairSystem_Grp
+    DynamicCurve_Grp
+    Locator_Grp
+    Collider_Grp
+each elements in the Spring_Setup_Grp should be hidden to have a clean viewport.
+delegated=None : This means you will be using first selected ctrl to receive dynamic_envelope
+master_ctrl=None : This means you will be using first selected ctrl to receive nucleus attributes
+hairSystem=None : This will create a new hairSystem
+nucleus=None : This will create a new nucleus
+
+Do's and Don't
+Do's:
+You can have multiple different hairSystem on the same nucleus//master_ctrl
+You must follow the color standard which is to have the dynamic envelope be the brown controller.
+
+Don't:
+You can't have multiple master_ctrl on the same nucleus
+
+
+code template to launch:
 import pymel.core as pm
 import spring_generator as spring
 
@@ -10,7 +41,7 @@ nucleus=pm.PyNode("Jan_Spring_Master_spring_nucleus") # or None
 hairSystem=pm.PyNode("Jan_Leafs_Jan_Leafs_13_00_nHairShape") # or None
 
 
-spring.generate_springs( aim_direction=[1, 0, 0],upVector_direction=[0, 0, 1],
+spring.generate_springs( aim_direction=[1, 0, z0],upVector_direction=[0, 0, 1],
              master_ctrl=master_ctrl,nucleus=nucleus,
              hairSystem=hairSystem,delegate_envelope=delegated,
              local_type="FK")
@@ -22,11 +53,7 @@ from omtk.libs.libRigging import create_utility_node
 
 # todo// if only this could be cleaned to have a particle spring build
 # todo// renaming gets real shitty if there is some short name that are the same. adapt to short name support.
-# todo// a fk/ik chain build via nHair------------------------------------------------------------------------------DONE
-# todo// Ik attach to ctrl and fk attach to control separately(or together I still don't know what would be better)-DONE
-# todo// must support the build with an assigned nHair with or without an assigned nucleus--------------------------DONE
-# todo// must make connection with nucleus.startFrame instead of nHair.startFrame --------------------------------- DONE
-# todo// must support a certain "unbuild method". ------------------------------------------------------------------DONE
+# todo// a WORKING ik chain build via nHair
 # Notice// can't have multiple master switch if only one nucleus. It then needs more nucleus.
 
 def _get_zero_grp(target):
@@ -133,7 +160,7 @@ def _prepare_ctrl(ctrl, master=False, needs_parent=False, delegate=False):
                    defaultValue=0)
         ctrl.springActivation.set(channelBox=True)
         pm.addAttr(ctrl, longName="startFrame", attributeType="float", keyable=False, defaultValue=100)
-        pm.addAttr(ctrl, longName="timeScale", attributeType="float", keyable=True, defaultValue=1, min=0)
+        pm.addAttr(ctrl, longName="timeScale", attributeType="float", keyable=True, defaultValue=1, min=0.01)
         pm.addAttr(ctrl, longName="motionDrag", attributeType="float", keyable=True, defaultValue=0, min=0)
         pm.addAttr(ctrl, longName="springSampling", attributeType="float", keyable=True, defaultValue=12, min=1)
         ctrl.startFrame.set(channelBox=True)
