@@ -1,3 +1,12 @@
+"""
+Deux fonctions sont nécessaires. 
+bruteforceLocalize(selection=None) la selection doit être préférablement un groupe 
+qui contient tout le rig à l'intérieur(sans les master Ctrl/God_Ctrl/Ctrl_Grp/Top_Node/ect...)
+do_matrix_offseter(mesh_transform_list) qui va traiter toutes la liste de mesh affecter 
+par des deformers pour y appliquer le transformGeometry qui va tout offset le input mesh.
+Une fois les deux étapes rouller prendre le driven_Grp et le caché. Prendre le grp dupliqué
+et le mettre dans le master_Ctrl avec le locator. Le locator devrait être caché
+"""
 import pymel.core as pm
 import maya.cmds as mc
 
@@ -186,7 +195,7 @@ def bruteforceLocalize(selection=None):
 
 def do_matrix_offseter(mesh_transform_list):
     def create_offset(mesh_transform,locator=None):
-        mesh = mesh_transform.getShape()
+        mesh = mesh_transform.getShape(noIntermediate=True)
         skinCluster = mesh.inMesh.connections(plugs=True)[0]
         transform_geo = pm.createNode("transformGeometry")
 

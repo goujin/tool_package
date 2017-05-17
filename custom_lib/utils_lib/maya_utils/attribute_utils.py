@@ -18,7 +18,7 @@ def next_available(attribute): #todo this is bad, look at check_free_index. It i
 
 def check_free_index(attribute):
     connections_list = attribute.connections(connections=True, plugs=True)
-    if connections_list == []:
+    if not connections_list:
         return 0
     else:
         index = connections_list[-1][
